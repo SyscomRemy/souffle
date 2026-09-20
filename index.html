@@ -10,8 +10,9 @@
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
     font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
-  canvas{display:block;position:fixed;top:0;left:0}
-  .hud{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) 16px 22px;pointer-events:none;z-index:2;background:linear-gradient(rgba(6,10,22,.45),rgba(6,10,22,0))}
+  canvas{display:block;position:absolute;top:0;left:0}
+  #stage{position:fixed;top:0;left:0;overflow:hidden}
+  .hud{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) 16px 22px;pointer-events:none;z-index:2;background:linear-gradient(rgba(6,10,22,.45),rgba(6,10,22,0))}
   .top{display:flex;justify-content:space-between;align-items:flex-start}
   .score{font-size:35px;font-weight:650;letter-spacing:-.028em;font-variant-numeric:tabular-nums;line-height:1;text-shadow:0 0 20px rgba(120,190,255,.4)}
   .meta{font-size:10.5px;color:var(--dim);letter-spacing:.1em;margin-top:5px;font-variant-numeric:tabular-nums}
@@ -39,7 +40,7 @@
     transition:opacity .15s ease,transform .12s ease,border-color .15s ease}
   .lang.on{opacity:1;border-color:rgba(85,230,255,.6);background:rgba(11,30,48,.72)}
   .lang:active{transform:scale(.9)}
-  #mis{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 128px);transform:translateX(-50%) translateY(-14px);width:min(86vw,420px);
+  #mis{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 128px);transform:translateX(-50%) translateY(-14px);width:min(86vw,420px);
   display:flex;align-items:flex-start;gap:9px;
   padding:9px 12px 10px;border:1px solid rgba(120,220,255,.34);border-left:3px solid rgba(120,220,255,.85);
   background:linear-gradient(180deg,rgba(8,16,26,.90),rgba(6,10,18,.84));border-radius:4px 13px 13px 13px;
@@ -77,14 +78,14 @@
   .mute.off{color:var(--dim);border-color:rgba(111,132,161,.3);opacity:.75}
   .mute .slash{position:absolute;width:19px;height:1.5px;background:currentColor;transform:rotate(-45deg);display:none}
   .mute.off .slash{display:block}
-  .zone{position:fixed;top:40%;left:0;right:0;text-align:center;pointer-events:none;opacity:0;z-index:3;
+  .zone{position:absolute;top:40%;left:0;right:0;text-align:center;pointer-events:none;opacity:0;z-index:3;
     font-size:13px;letter-spacing:.44em;font-weight:600;color:#fff;text-shadow:0 0 30px rgba(140,200,255,.9)}
   .zone.show{animation:zf 2.8s ease-out}
   @keyframes zf{0%{opacity:0;letter-spacing:1em}16%{opacity:1;letter-spacing:.44em}70%{opacity:1}100%{opacity:0}}
-  .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:14px;padding:26px;text-align:center;z-index:9}
   .ov.hide{display:none}
-  #start{pointer-events:none;justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 18vh);background:linear-gradient(rgba(2,4,10,.55),rgba(2,4,10,0) 60%)}
+  #start{pointer-events:none;justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + min(18vh,180px));background:linear-gradient(rgba(2,4,10,.55),rgba(2,4,10,0) 60%)}
   #end{background:rgba(2,4,10,.86)}
   h1{margin:0;font-size:42px;letter-spacing:.26em;font-weight:600;text-indent:.26em;text-shadow:0 0 40px rgba(85,230,255,.45)}
   .sub{margin:0;color:var(--dim);font-size:11px;letter-spacing:.22em}
@@ -96,7 +97,7 @@
   .pick .lbl{font-size:10.5px;letter-spacing:.22em;color:var(--dim);animation:pulse 2.4s ease-in-out infinite}
   .pick .lbl b{color:var(--ink);font-weight:650;letter-spacing:.24em}
   .pickrow{display:flex;align-items:flex-end;justify-content:center;gap:12px;pointer-events:none}
-  #start .pickrow{margin-top:20vh}
+  #start .pickrow{margin-top:min(20vh,200px)}
   #end .pickrow{margin-top:4px}
   #crewopen canvas,#crewopen2 canvas{width:104px;height:112px}
   #end #crewopen2 canvas{width:88px;height:94px}
@@ -135,6 +136,7 @@
 </style>
 </head>
 <body>
+<div id="stage">
 <canvas id="c"></canvas>
   <div id="mis">
     <div id="misBot"><svg viewBox="0 0 32 32" aria-hidden="true">
@@ -201,12 +203,14 @@
   <div class="cinfo"><b id="cname">PILOTE</b><i id="crole"></i><p id="ctxt"></p></div>
   <button class="copy" id="crewclose">EMBARQUER</button>
 </div>
+</div><!-- /#stage -->
 
 <script>
 (function(){
 "use strict";
 
 var cv=document.getElementById('c'),ctx=cv.getContext('2d');
+var stage=document.getElementById('stage');
 var bc=document.createElement('canvas'),bx=bc.getContext('2d');
 var lc=document.createElement('canvas'),lx=lc.getContext('2d');
 var CW=0,CH=0,DPR=1,SC=1,visW=100,BS=0.25;
@@ -226,10 +230,15 @@ function resize(){
   // équitable entre joueurs pour le classement.
   var winW=window.innerWidth,winH=window.innerHeight;
   CW=Math.min(winW,480);CH=Math.min(winH,1000);
+  // #stage porte le canvas ET toute l'interface HTML (score, FLUX, écrans,
+  // bannière de mission...) : les deux doivent bouger comme un seul bloc,
+  // sinon l'interface reste plaquée sur toute la fenêtre pendant que le
+  // canvas, lui, se centre — exactement le bug vu en jouant sur PC.
+  stage.style.width=CW+'px';stage.style.height=CH+'px';
+  stage.style.left=Math.round((winW-CW)/2)+'px';
+  stage.style.top=Math.round((winH-CH)/2)+'px';
   cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);
   cv.style.width=CW+'px';cv.style.height=CH+'px';
-  cv.style.left=Math.round((winW-CW)/2)+'px';
-  cv.style.top=Math.round((winH-CH)/2)+'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
   bc.width=Math.max(1,Math.round(CW*BS));bc.height=Math.max(1,Math.round(CH*BS));
   lc.width=bc.width;lc.height=bc.height;
