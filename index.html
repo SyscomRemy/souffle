@@ -660,7 +660,10 @@ function closeHull(){scHull.classList.add('hide');shipLabels();sSnap();}
   hl.addEventListener('pointerup',function(e){e.stopPropagation();e.preventDefault();closeHull();});
   scHull.addEventListener('pointerdown',function(e){e.stopPropagation();});
   scHull.addEventListener('pointerup',function(e){e.stopPropagation();});
-  shipLabels();
+  // Pas de shipLabels() ici : elle appelle rocket(), qui lit des constantes de
+  // rendu (BUMPS…) déclarées bien plus bas en `var`. Les appeler maintenant
+  // les lirait à undefined et ferait échouer tout le script. L'initialisation
+  // en fin de fichier s'en charge, une fois tout déclaré.
 })();
 
 var DT=1/60,PR=2.3,BAND=55;
